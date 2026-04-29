@@ -1,0 +1,11 @@
+
+SET FOREIGN_KEY_CHECKS = 0;
+
+DROP TABLE IF EXISTS `operation_logs`;
+DROP TABLE IF EXISTS `system_configs`;
+DROP TABLE IF EXISTS `admins`;
+DROP TABLE IF EXISTS `borrow_records`;
+DROP TABLE IF EXISTS `readers`;
+DROP TABLE IF EXISTS `books`;
+
+SET FOREIGN_KEY_CHECKS = 1;
