@@ -6,6 +6,7 @@ import "time"
 type BorrowRecord struct {
 	BorrowID   int64      `gorm:"column:borrow_id;primaryKey;autoIncrement" json:"borrow_id"`
 	ReaderID   string     `gorm:"column:reader_id;not null;index" json:"reader_id"`
+	BookID     int64      `gorm:"column:book_id;not null;index" json:"book_id"`
 	ISBN       string     `gorm:"column:isbn;not null;index" json:"isbn"`
 	BorrowDate time.Time  `gorm:"column:borrow_date;type:date;not null" json:"borrow_date"`
 	DueDate    time.Time  `gorm:"column:due_date;type:date;not null" json:"due_date"`

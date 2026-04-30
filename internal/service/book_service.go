@@ -43,14 +43,6 @@ type UpdateStatusRequest struct {
 }
 
 func (s *BookService) CreateBook(req *CreateBookRequest) (*model.Book, error) {
-	exists, err := s.bookRepo.Exists(req.ISBN)
-	if err != nil {
-		return nil, err
-	}
-	if exists {
-		return nil, errors.New("ISBN已存在")
-	}
-
 	book := &model.Book{
 		ISBN:       req.ISBN,
 		Title:      req.Title,
@@ -66,15 +58,15 @@ func (s *BookService) CreateBook(req *CreateBookRequest) (*model.Book, error) {
 		book.EntryDate = time.Now()
 	}
 
-	err = s.bookRepo.Create(book)
+	err := s.bookRepo.Create(book)
 	if err != nil {
 		return nil, err
 	}
 	return book, nil
 }
 
-func (s *BookService) UpdateBook(isbn string, req *UpdateBookRequest) (*model.Book, error) {
-	book, err := s.bookRepo.FindByISBN(isbn)
+func (s *BookService) UpdateBook(bookID int64, req *UpdateBookRequest) (*model.Book, error) {
+	book, err := s.bookRepo.FindByID(bookID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errors.New("图书不存在")
@@ -108,8 +100,16 @@ func (s *BookService) UpdateBook(isbn string, req *UpdateBookRequest) (*model.Bo
 	return book, nil
 }
 
-func (s *BookService) DeleteBook(isbn string) error {
-	hasActive, err := s.bookRepo.HasActiveBorrow(isbn)
+func (s *BookService) DeleteBook(bookID int64) error {
+	book, err := s.bookRepo.FindByID(bookID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errors.New("图书不存在")
+		}
+		return err
+	}
+
+	hasActive, err := s.bookRepo.HasActiveBorrow(book.ISBN, bookID)
 	if err != nil {
 		return err
 	}
@@ -117,11 +117,11 @@ func (s *BookService) DeleteBook(isbn string) error {
 		return errors.New("该图书有未归还的借阅记录")
 	}
 
-	return s.bookRepo.Delete(isbn)
+	return s.bookRepo.Delete(bookID)
 }
 
-func (s *BookService) GetBook(isbn string) (*model.Book, error) {
-	return s.bookRepo.FindByISBN(isbn)
+func (s *BookService) GetBook(bookID int64) (*model.Book, error) {
+	return s.bookRepo.FindByID(bookID)
 }
 
 func (s *BookService) ListBooks(keyword, category, status string, page, pageSize int) ([]model.Book, int64, error) {
@@ -134,8 +134,8 @@ func (s *BookService) ListBooks(keyword, category, status string, page, pageSize
 	return s.bookRepo.List(keyword, category, status, page, pageSize)
 }
 
-func (s *BookService) UpdateBookStatus(isbn string, status string) error {
-	exists, err := s.bookRepo.Exists(isbn)
+func (s *BookService) UpdateBookStatus(bookID int64, status string) error {
+	exists, err := s.bookRepo.ExistsByID(bookID)
 	if err != nil {
 		return err
 	}
@@ -143,5 +143,5 @@ func (s *BookService) UpdateBookStatus(isbn string, status string) error {
 		return errors.New("图书不存在")
 	}
 
-	return s.bookRepo.UpdateStatus(isbn, status)
+	return s.bookRepo.UpdateStatus(bookID, status)
 }

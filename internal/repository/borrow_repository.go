@@ -34,6 +34,15 @@ func (r *BorrowRepository) FindActiveByISBN(isbn string) (*model.BorrowRecord, e
 	return &record, nil
 }
 
+func (r *BorrowRepository) FindActiveByBookID(bookID int64) (*model.BorrowRecord, error) {
+	var record model.BorrowRecord
+	err := r.db.Where("book_id = ? AND return_date IS NULL", bookID).First(&record).Error
+	if err != nil {
+		return nil, err
+	}
+	return &record, nil
+}
+
 func (r *BorrowRepository) FindActiveByReaderAndISBN(readerID, isbn string) (*model.BorrowRecord, error) {
 	var record model.BorrowRecord
 	err := r.db.Where("reader_id = ? AND isbn = ? AND return_date IS NULL", readerID, isbn).First(&record).Error

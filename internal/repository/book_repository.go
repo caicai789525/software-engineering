@@ -24,8 +24,17 @@ func (r *BookRepository) Update(book *model.Book) error {
 	return r.db.Save(book).Error
 }
 
-func (r *BookRepository) Delete(isbn string) error {
-	return r.db.Delete(&model.Book{}, "isbn = ?", isbn).Error
+func (r *BookRepository) Delete(bookID int64) error {
+	return r.db.Delete(&model.Book{}, bookID).Error
+}
+
+func (r *BookRepository) FindByID(bookID int64) (*model.Book, error) {
+	var book model.Book
+	err := r.db.First(&book, bookID).Error
+	if err != nil {
+		return nil, err
+	}
+	return &book, nil
 }
 
 func (r *BookRepository) FindByISBN(isbn string) (*model.Book, error) {
@@ -61,14 +70,14 @@ func (r *BookRepository) List(keyword, category, status string, page, pageSize i
 	return books, total, err
 }
 
-func (r *BookRepository) UpdateStatus(isbn, status string) error {
-	return r.db.Model(&model.Book{}).Where("isbn = ?", isbn).Update("status", status).Error
+func (r *BookRepository) UpdateStatus(bookID int64, status string) error {
+	return r.db.Model(&model.Book{}).Where("book_id = ?", bookID).Update("status", status).Error
 }
 
-func (r *BookRepository) HasActiveBorrow(isbn string) (bool, error) {
+func (r *BookRepository) HasActiveBorrow(isbn string, bookID int64) (bool, error) {
 	var count int64
 	err := r.db.Model(&model.BorrowRecord{}).
-		Where("isbn = ? AND return_date IS NULL", isbn).
+		Where("isbn = ? AND book_id = ? AND return_date IS NULL", isbn, bookID).
 		Count(&count).Error
 	return count > 0, err
 }
@@ -76,5 +85,11 @@ func (r *BookRepository) HasActiveBorrow(isbn string) (bool, error) {
 func (r *BookRepository) Exists(isbn string) (bool, error) {
 	var count int64
 	err := r.db.Model(&model.Book{}).Where("isbn = ?", isbn).Count(&count).Error
+	return count > 0, err
+}
+
+func (r *BookRepository) ExistsByID(bookID int64) (bool, error) {
+	var count int64
+	err := r.db.Model(&model.Book{}).Where("book_id = ?", bookID).Count(&count).Error
 	return count > 0, err
 }

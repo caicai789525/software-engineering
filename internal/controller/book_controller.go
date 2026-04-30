@@ -8,6 +8,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func parseBookID(ctx *gin.Context) (int64, error) {
+	bookIDStr := ctx.Param("book_id")
+	return strconv.ParseInt(bookIDStr, 10, 64)
+}
+
 type BookController struct {
 	bookService *service.BookService
 }
@@ -42,15 +47,17 @@ func (c *BookController) CreateBook(ctx *gin.Context) {
 
 // UpdateBook 更新图书
 func (c *BookController) UpdateBook(ctx *gin.Context) {
-	isbn := ctx.Param("isbn")
-	// 更新图书
+	bookID, err := parseBookID(ctx)
+	if err != nil {
+		response.Error(ctx, response.CodeInvalidParam, "参数错误")
+		return
+	}
 	var req service.UpdateBookRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		response.Error(ctx, response.CodeInvalidParam, "参数错误")
 		return
 	}
-	// 更新图书
-	book, err := c.bookService.UpdateBook(isbn, &req)
+	book, err := c.bookService.UpdateBook(bookID, &req)
 	if err != nil {
 		response.Error(ctx, response.CodeError, err.Error())
 		return
@@ -61,9 +68,13 @@ func (c *BookController) UpdateBook(ctx *gin.Context) {
 
 // DeleteBook 删除图书
 func (c *BookController) DeleteBook(ctx *gin.Context) {
-	isbn := ctx.Param("isbn")
+	bookID, err := parseBookID(ctx)
+	if err != nil {
+		response.Error(ctx, response.CodeInvalidParam, "参数错误")
+		return
+	}
 
-	err := c.bookService.DeleteBook(isbn)
+	err = c.bookService.DeleteBook(bookID)
 	if err != nil {
 		if err.Error() == "该图书有未归还的借阅记录" {
 			response.Error(ctx, response.CodeBookHasBorrow, err.Error())
@@ -78,9 +89,13 @@ func (c *BookController) DeleteBook(ctx *gin.Context) {
 
 // GetBook 获取图书
 func (c *BookController) GetBook(ctx *gin.Context) {
-	isbn := ctx.Param("isbn")
+	bookID, err := parseBookID(ctx)
+	if err != nil {
+		response.Error(ctx, response.CodeInvalidParam, "参数错误")
+		return
+	}
 
-	book, err := c.bookService.GetBook(isbn)
+	book, err := c.bookService.GetBook(bookID)
 	if err != nil {
 		response.Error(ctx, response.CodeBookNotFound, "图书不存在")
 		return
@@ -113,14 +128,17 @@ func (c *BookController) ListBooks(ctx *gin.Context) {
 
 // UpdateBookStatus 更新图书状态
 func (c *BookController) UpdateBookStatus(ctx *gin.Context) {
-	isbn := ctx.Param("isbn")
+	bookID, err := parseBookID(ctx)
+	if err != nil {
+		response.Error(ctx, response.CodeInvalidParam, "参数错误")
+		return
+	}
 	var req service.UpdateStatusRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		response.Error(ctx, response.CodeInvalidParam, "参数错误")
 		return
 	}
-	// 更新图书状态，返回图书列表
-	err := c.bookService.UpdateBookStatus(isbn, req.Status)
+	err = c.bookService.UpdateBookStatus(bookID, req.Status)
 	if err != nil {
 		response.Error(ctx, response.CodeError, err.Error())
 		return

@@ -29,11 +29,11 @@ func NewBorrowService() *BorrowService {
 
 type BorrowRequest struct {
 	ReaderID string `json:"reader_id" binding:"required"`
-	ISBN     string `json:"isbn" binding:"required"`
+	BookID   int64  `json:"book_id" binding:"required"`
 }
 
 type ReturnRequest struct {
-	ISBN string `json:"isbn" binding:"required"`
+	BookID int64 `json:"book_id" binding:"required"`
 }
 
 func (s *BorrowService) BorrowBook(req *BorrowRequest) (*model.BorrowRecord, error) {
@@ -63,7 +63,7 @@ func (s *BorrowService) BorrowBook(req *BorrowRequest) (*model.BorrowRecord, err
 		return nil, errors.New("读者状态异常，无法借书")
 	}
 
-	book, err := s.bookRepo.FindByISBN(req.ISBN)
+	book, err := s.bookRepo.FindByID(req.BookID)
 	if err != nil {
 		tx.Rollback()
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -77,10 +77,10 @@ func (s *BorrowService) BorrowBook(req *BorrowRequest) (*model.BorrowRecord, err
 		return nil, errors.New("图书不可借阅")
 	}
 
-	activeBorrow, _ := s.borrowRepo.FindActiveByReaderAndISBN(req.ReaderID, req.ISBN)
+	activeBorrow, _ := s.borrowRepo.FindActiveByBookID(req.BookID)
 	if activeBorrow != nil {
 		tx.Rollback()
-		return nil, errors.New("该图书已被当前读者借阅且未归还")
+		return nil, errors.New("该图书已被借阅且未归还")
 	}
 
 	maxBorrowCount := s.configRepo.GetInt("max_borrow_count", 5)
@@ -100,7 +100,8 @@ func (s *BorrowService) BorrowBook(req *BorrowRequest) (*model.BorrowRecord, err
 
 	record := &model.BorrowRecord{
 		ReaderID:   req.ReaderID,
-		ISBN:       req.ISBN,
+		BookID:     req.BookID,
+		ISBN:       book.ISBN,
 		BorrowDate: now,
 		DueDate:    dueDate,
 		Fine:       0,
@@ -111,7 +112,7 @@ func (s *BorrowService) BorrowBook(req *BorrowRequest) (*model.BorrowRecord, err
 		return nil, err
 	}
 
-	if err := tx.Model(&model.Book{}).Where("isbn = ?", req.ISBN).Update("status", model.BookStatusBorrowed).Error; err != nil {
+	if err := tx.Model(&model.Book{}).Where("book_id = ?", req.BookID).Update("status", model.BookStatusBorrowed).Error; err != nil {
 		tx.Rollback()
 		return nil, err
 	}
@@ -136,7 +137,7 @@ func (s *BorrowService) ReturnBook(req *ReturnRequest) (*model.BorrowRecord, err
 		}
 	}()
 
-	record, err := s.borrowRepo.FindActiveByISBN(req.ISBN)
+	record, err := s.borrowRepo.FindActiveByBookID(req.BookID)
 	if err != nil {
 		tx.Rollback()
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -167,7 +168,7 @@ func (s *BorrowService) ReturnBook(req *ReturnRequest) (*model.BorrowRecord, err
 		return nil, err
 	}
 
-	if err := tx.Model(&model.Book{}).Where("isbn = ?", req.ISBN).Update("status", model.BookStatusInLibrary).Error; err != nil {
+	if err := tx.Model(&model.Book{}).Where("book_id = ?", req.BookID).Update("status", model.BookStatusInLibrary).Error; err != nil {
 		tx.Rollback()
 		return nil, err
 	}
