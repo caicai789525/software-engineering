@@ -44,11 +44,11 @@ func main() {
 		books := api.Group("/books")
 		{
 			books.GET("", bookController.ListBooks)
-			books.GET("/:isbn", bookController.GetBook)
+			books.GET("/:book_id", bookController.GetBook)
 			books.POST("", bookController.CreateBook)
-			books.PUT("/:isbn", bookController.UpdateBook)
-			books.DELETE("/:isbn", bookController.DeleteBook)
-			books.PATCH("/:isbn/status", bookController.UpdateBookStatus)
+			books.PUT("/:book_id", bookController.UpdateBook)
+			books.DELETE("/:book_id", bookController.DeleteBook)
+			books.PATCH("/:book_id/status", bookController.UpdateBookStatus)
 		}
 
 		readers := api.Group("/readers")
