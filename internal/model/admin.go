@@ -11,7 +11,7 @@ const (
 
 type Admin struct {
 	AdminID      int64     `gorm:"column:admin_id;primaryKey;autoIncrement" json:"admin_id"`
-	Username     string    `gorm:"column:username;uniqueIndex;not null" json:"username"`
+	Username     string    `gorm:"column:username;type:varchar(100);uniqueIndex;not null" json:"username"`
 	Password     string    `gorm:"column:password;not null" json:"-"`
 	Role         string    `gorm:"column:role;not null;default:'ROLE_LIBRARIAN'" json:"role"`
 	LastLoginIP  string    `gorm:"column:last_login_ip" json:"last_login_ip"`

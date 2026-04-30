@@ -6,8 +6,8 @@ server:
 database:
   host: localhost
   port: 3306
-  user: root
-  password: root
+  user: library_user
+  password: library_pass
   dbname: library_db
   charset: utf8mb4
   max_open_conns: 100
