@@ -11,7 +11,8 @@ const (
 )
 
 type Book struct {
-	ISBN       string    `gorm:"column:isbn;primaryKey" json:"isbn"`
+	BookID     int64     `gorm:"column:book_id;primaryKey;autoIncrement" json:"book_id"`
+	ISBN       string    `gorm:"column:isbn;not null" json:"isbn"`
 	Title      string    `gorm:"column:title;not null" json:"title"`
 	Author     string    `gorm:"column:author;not null" json:"author"`
 	Publisher  string    `gorm:"column:publisher" json:"publisher"`
