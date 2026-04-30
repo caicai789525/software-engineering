@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import { Card, Form, InputNumber, Button, message, Descriptions } from 'antd'
-import { SystemConfig } from '../types'
+import { SystemConfig as SystemConfigType } from '../types'
 import { mockAPI } from '../services/mock'
 
 export default function SystemConfig() {
   const [loading, setLoading] = useState(false)
   const [saving, setSaving] = useState(false)
-  const [config, setConfig] = useState<SystemConfig | null>(null)
+  const [config, setConfig] = useState<SystemConfigType | null>(null)
   const [form] = Form.useForm()
 
   const fetchConfig = async () => {

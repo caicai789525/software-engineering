@@ -12,16 +12,16 @@ export const bookAPI = {
   getBooks: (params: { keyword?: string; category?: string; status?: string; page?: number; size?: number }) =>
     request.get<any, PageResult<Book>>('/books', { params }),
   
-  getBook: (isbn: string) => request.get<any, Book>(`/books/${isbn}`),
+  getBook: (bookId: number) => request.get<any, Book>(`/books/${bookId}`),
   
-  createBook: (data: Book) => request.post('/books', data),
+  createBook: (data: Omit<Book, 'book_id' | 'status' | 'entry_date'>) => request.post('/books', data),
   
-  updateBook: (isbn: string, data: Partial<Book>) => request.put(`/books/${isbn}`, data),
+  updateBook: (bookId: number, data: Partial<Book>) => request.put(`/books/${bookId}`, data),
   
-  deleteBook: (isbn: string) => request.delete(`/books/${isbn}`),
+  deleteBook: (bookId: number) => request.delete(`/books/${bookId}`),
   
-  updateBookStatus: (isbn: string, status: string) =>
-    request.patch(`/books/${isbn}/status`, { status })
+  updateBookStatus: (bookId: number, status: string) =>
+    request.patch(`/books/${bookId}/status`, { status })
 }
 
 export const readerAPI = {
