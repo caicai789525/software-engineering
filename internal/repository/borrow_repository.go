@@ -1,4 +1,3 @@
-
 package repository
 
 import (
@@ -66,16 +65,14 @@ func (r *BorrowRepository) ListActiveByReader(readerID string) ([]model.BorrowRe
 	return records, err
 }
 
-func (r *BorrowRepository) GetBorrowRank(startDate, endDate time.Time, limit int) ([]struct {
-	ISBN   string
-	Title  string
-	Count  int64
-}, error) {
-	var results []struct {
-		ISBN   string
-		Title  string
-		Count  int64
-	}
+type BorrowRankResult struct {
+	ISBN   string `json:"isbn"`
+	Title  string `json:"title"`
+	Count  int64  `json:"count"`
+}
+
+func (r *BorrowRepository) GetBorrowRank(startDate, endDate time.Time, limit int) ([]BorrowRankResult, error) {
+	var results []BorrowRankResult
 
 	query := r.db.Table("borrow_records br").
 		Select("br.isbn, b.title, COUNT(*) as count").
@@ -96,14 +93,13 @@ func (r *BorrowRepository) GetBorrowRank(startDate, endDate time.Time, limit int
 	return results, err
 }
 
-func (r *BorrowRepository) GetCategoryStats(startDate, endDate time.Time) ([]struct {
-	Category string
-	Count    int64
-}, error) {
-	var results []struct {
-		Category string
-		Count    int64
-	}
+type CategoryStatsResult struct {
+	Category string `json:"category"`
+	Count    int64  `json:"count"`
+}
+
+func (r *BorrowRepository) GetCategoryStats(startDate, endDate time.Time) ([]CategoryStatsResult, error) {
+	var results []CategoryStatsResult
 
 	query := r.db.Table("borrow_records br").
 		Select("b.category, COUNT(*) as count").
@@ -138,23 +134,22 @@ func (r *BorrowRepository) GetOverdueStats(startDate, endDate time.Time) ([]mode
 	return records, err
 }
 
-func (r *BorrowRepository) GetMonthlyStats(year int) ([]struct {
-	Month int
-	Count int64
-}, error) {
-	var results []struct {
-		Month int
-		Count int64
-	}
+type MonthlyStatsResult struct {
+	Month string `json:"month"`
+	Count int64  `json:"count"`
+}
+
+func (r *BorrowRepository) GetMonthlyStats(year int) ([]MonthlyStatsResult, error) {
+	var results []MonthlyStatsResult
 
 	query := r.db.Table("borrow_records").
-		Select("MONTH(borrow_date) as month, COUNT(*) as count")
+		Select("DATE_FORMAT(borrow_date, '%Y-%m') as month, COUNT(*) as count")
 
 	if year > 0 {
 		query = query.Where("YEAR(borrow_date) = ?", year)
 	}
 
-	err := query.Group("MONTH(borrow_date)").
+	err := query.Group("month").
 		Order("month").
 		Scan(&results).Error
 

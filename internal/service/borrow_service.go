@@ -184,11 +184,7 @@ func (s *BorrowService) GetReaderActiveBorrows(readerID string) ([]model.BorrowR
 	return s.borrowRepo.ListActiveByReader(readerID)
 }
 
-func (s *BorrowService) GetBorrowRank(startDate, endDate string, limit int) ([]struct {
-	ISBN   string
-	Title  string
-	Count  int64
-}, error) {
+func (s *BorrowService) GetBorrowRank(startDate, endDate string, limit int) ([]repository.BorrowRankResult, error) {
 	var start, end time.Time
 	if startDate != "" {
 		start, _ = time.Parse("2006-01-02", startDate)
@@ -202,10 +198,7 @@ func (s *BorrowService) GetBorrowRank(startDate, endDate string, limit int) ([]s
 	return s.borrowRepo.GetBorrowRank(start, end, limit)
 }
 
-func (s *BorrowService) GetCategoryStats(startDate, endDate string) ([]struct {
-	Category string
-	Count    int64
-}, error) {
+func (s *BorrowService) GetCategoryStats(startDate, endDate string) ([]repository.CategoryStatsResult, error) {
 	var start, end time.Time
 	if startDate != "" {
 		start, _ = time.Parse("2006-01-02", startDate)
@@ -227,9 +220,6 @@ func (s *BorrowService) GetOverdueStats(startDate, endDate string) ([]model.Borr
 	return s.borrowRepo.GetOverdueStats(start, end)
 }
 
-func (s *BorrowService) GetMonthlyStats(year int) ([]struct {
-	Month int
-	Count int64
-}, error) {
+func (s *BorrowService) GetMonthlyStats(year int) ([]repository.MonthlyStatsResult, error) {
 	return s.borrowRepo.GetMonthlyStats(year)
 }
