@@ -43,14 +43,14 @@ export const readerAPI = {
 }
 
 export const borrowAPI = {
-  borrow: (readerId: string, isbn: string) =>
+  borrow: (readerId: string, bookId: number) =>
     request.post<any, { title: string; due_date: string }>('/borrow', {
       reader_id: readerId,
-      isbn
+      book_id: bookId
     }),
   
-  returnBook: (isbn: string) =>
-    request.post<any, { fine: number }>('/borrow/return', { isbn }),
+  returnBook: (bookId: number) =>
+    request.post<any, { fine: number }>('/borrow/return', { book_id: bookId }),
   
   getReaderBorrows: (readerId: string) =>
     request.get<any, BorrowRecord[]>(`/borrow/reader/${readerId}`)

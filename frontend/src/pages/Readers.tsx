@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react'
 import { Table, Input, Button, Space, Modal, Form, message, Popconfirm, Tag } from 'antd'
 import { PlusOutlined, EditOutlined, DeleteOutlined, SearchOutlined } from '@ant-design/icons'
 import { Reader } from '../types'
-import { mockAPI } from '../services/mock'
+import { readerAPI } from '../services/api'
 import type { ColumnsType } from 'antd/es/table'
 
 export default function Readers() {
@@ -19,7 +19,7 @@ export default function Readers() {
   const fetchReaders = useCallback(async () => {
     setLoading(true)
     try {
-      const result = await mockAPI.getReaders({
+      const result = await readerAPI.getReaders({
         keyword,
         page,
         size: pageSize
@@ -51,7 +51,7 @@ export default function Readers() {
 
   const handleDelete = async (readerId: string) => {
     try {
-      await mockAPI.deleteReader(readerId)
+      await readerAPI.deleteReader(readerId)
       message.success('删除成功')
       fetchReaders()
     } catch (error) {
@@ -62,7 +62,7 @@ export default function Readers() {
   const handleToggleStatus = async (reader: Reader) => {
     try {
       const newStatus = reader.status === '正常' ? '注销' : '正常'
-      await mockAPI.updateReaderStatus(reader.reader_id, newStatus)
+      await readerAPI.updateReaderStatus(reader.reader_id, newStatus)
       message.success('状态更新成功')
       fetchReaders()
     } catch (error) {
@@ -74,10 +74,10 @@ export default function Readers() {
     try {
       const values = await form.validateFields()
       if (editingReader) {
-        await mockAPI.updateReader(editingReader.reader_id, values)
+        await readerAPI.updateReader(editingReader.reader_id, values)
         message.success('更新成功')
       } else {
-        await mockAPI.createReader(values)
+        await readerAPI.createReader(values)
         message.success('添加成功')
       }
       setIsModalOpen(false)
