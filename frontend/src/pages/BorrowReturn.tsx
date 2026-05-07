@@ -1,14 +1,17 @@
 import React, { useState } from 'react'
-import { Tabs, Form, Input, Button, Card, Table, message, Space, Tag, Modal } from 'antd'
+import { Tabs, Form, Input, Button, Card, Table, message, Space, Tag, Modal, Select } from 'antd'
 import { Book } from '../types'
-import { mockAPI } from '../services/mock'
+import { borrowAPI, bookAPI, readerAPI } from '../services/api'
 import type { ColumnsType } from 'antd/es/table'
+
+const { Option } = Select
 
 const { TabPane } = Tabs
 
 interface BorrowRecordWithTitle {
   borrow_id: number
   reader_id: string
+  book_id: number
   isbn: string
   title: string
   borrow_date: string
@@ -24,31 +27,51 @@ export default function BorrowReturn() {
   const [loading, setLoading] = useState(false)
   const [borrowRecords, setBorrowRecords] = useState<BorrowRecordWithTitle[]>([])
   const [currentReaderId, setCurrentReaderId] = useState<string>('')
+  const [availableBooks, setAvailableBooks] = useState<Book[]>([])
 
   const fetchBorrowRecords = async (readerId: string) => {
     if (!readerId) return
     try {
-      const records = await mockAPI.getReaderBorrows(readerId)
-      setBorrowRecords(records as BorrowRecordWithTitle[])
+      const records = await borrowAPI.getReaderBorrows(readerId)
+      const recordsWithTitle = records.map(record => ({
+        ...record,
+        title: record.title || '未知书名'
+      }))
+      setBorrowRecords(recordsWithTitle as BorrowRecordWithTitle[])
     } catch (error) {
       message.error('获取借阅记录失败')
     }
   }
 
-  const handleBorrow = async (values: { readerId: string; isbn: string }) => {
+  const fetchAvailableBooks = async (keyword: string) => {
+    if (!keyword) {
+      setAvailableBooks([])
+      return
+    }
+    try {
+      const result = await bookAPI.getBooks({ keyword, status: '在馆', size: 20 })
+      setAvailableBooks(result.list)
+    } catch (error) {
+      console.error('获取图书列表失败', error)
+    }
+  }
+
+  const handleBorrow = async (values: { readerId: string; bookId: number }) => {
     setLoading(true)
     try {
-      const result = await mockAPI.borrow(values.readerId, values.isbn)
+      const book = availableBooks.find(b => b.book_id === values.bookId)
+      const result = await borrowAPI.borrow(values.readerId, values.bookId)
       Modal.success({
         title: '借书成功',
         content: (
           <div>
-            <p>图书：{result.title}</p>
+            <p>图书：{book?.title || '未知书名'}</p>
             <p>应还日期：{result.due_date}</p>
           </div>
         )
       })
       borrowForm.resetFields()
+      setAvailableBooks([])
       setCurrentReaderId(values.readerId)
       fetchBorrowRecords(values.readerId)
     } catch (error) {
@@ -58,10 +81,10 @@ export default function BorrowReturn() {
     }
   }
 
-  const handleReturn = async (values: { isbn: string }) => {
+  const handleReturn = async (values: { bookId: number }) => {
     setLoading(true)
     try {
-      const result = await mockAPI.returnBook(values.isbn)
+      const result = await borrowAPI.returnBook(values.bookId)
       if (result.fine > 0) {
         Modal.success({
           title: '还书成功',
@@ -71,6 +94,9 @@ export default function BorrowReturn() {
         message.success('还书成功')
       }
       returnForm.resetFields()
+      if (currentReaderId) {
+        fetchBorrowRecords(currentReaderId)
+      }
     } catch (error) {
       message.error(error instanceof Error ? error.message : '还书失败')
     } finally {
@@ -119,36 +145,51 @@ export default function BorrowReturn() {
           <Card style={{ marginBottom: 16 }}>
             <Form
               form={borrowForm}
-              layout="inline"
+              layout="vertical"
               onFinish={handleBorrow}
             >
-              <Form.Item
-                name="readerId"
-                label="读者证号"
-                rules={[{ required: true, message: '请输入读者证号' }]}
-              >
-                <Input 
-                  placeholder="请输入读者证号" 
-                  style={{ width: 200 }}
-                  onPressEnter={() => borrowForm.submit()}
-                />
-              </Form.Item>
-              <Form.Item
-                name="isbn"
-                label="ISBN"
-                rules={[{ required: true, message: '请输入ISBN' }]}
-              >
-                <Input 
-                  placeholder="请输入图书ISBN" 
-                  style={{ width: 200 }}
-                  onPressEnter={() => borrowForm.submit()}
-                />
-              </Form.Item>
-              <Form.Item>
-                <Button type="primary" htmlType="submit" loading={loading}>
-                  借书
-                </Button>
-              </Form.Item>
+              <Space wrap>
+                <Form.Item
+                  name="readerId"
+                  label="读者证号"
+                  rules={[{ required: true, message: '请输入读者证号' }]}
+                  style={{ width: 250 }}
+                >
+                  <Input 
+                    placeholder="请输入读者证号" 
+                    onPressEnter={() => borrowForm.submit()}
+                  />
+                </Form.Item>
+                <Form.Item
+                  name="bookKeyword"
+                  label="图书搜索"
+                  style={{ width: 300 }}
+                >
+                  <Input 
+                    placeholder="搜索书名、作者或ISBN" 
+                    onChange={(e) => fetchAvailableBooks(e.target.value)}
+                  />
+                </Form.Item>
+                <Form.Item
+                  name="bookId"
+                  label="选择图书"
+                  rules={[{ required: true, message: '请选择图书' }]}
+                  style={{ width: 350 }}
+                >
+                  <Select placeholder="请选择要借阅的图书">
+                    {availableBooks.map(book => (
+                      <Option key={book.book_id} value={book.book_id}>
+                        {book.title} - {book.author} (ISBN: {book.isbn})
+                      </Option>
+                    ))}
+                  </Select>
+                </Form.Item>
+                <Form.Item style={{ marginTop: 24 }}>
+                  <Button type="primary" htmlType="submit" loading={loading}>
+                    借书
+                  </Button>
+                </Form.Item>
+              </Space>
             </Form>
           </Card>
         </TabPane>
@@ -157,25 +198,48 @@ export default function BorrowReturn() {
           <Card style={{ marginBottom: 16 }}>
             <Form
               form={returnForm}
-              layout="inline"
+              layout="vertical"
               onFinish={handleReturn}
             >
-              <Form.Item
-                name="isbn"
-                label="ISBN"
-                rules={[{ required: true, message: '请输入ISBN' }]}
-              >
-                <Input 
-                  placeholder="请输入图书ISBN或扫码" 
-                  style={{ width: 300 }}
-                  onPressEnter={() => returnForm.submit()}
-                />
-              </Form.Item>
-              <Form.Item>
-                <Button type="primary" htmlType="submit" loading={loading}>
-                  还书
-                </Button>
-              </Form.Item>
+              <Space wrap>
+                <Form.Item
+                  name="readerId"
+                  label="读者证号"
+                  rules={[{ required: true, message: '请输入读者证号' }]}
+                  style={{ width: 250 }}
+                >
+                  <Input 
+                    placeholder="请输入读者证号" 
+                    onChange={(e) => {
+                      setCurrentReaderId(e.target.value)
+                      if (e.target.value) {
+                        fetchBorrowRecords(e.target.value)
+                      }
+                    }}
+                  />
+                </Form.Item>
+                <Form.Item
+                  name="bookId"
+                  label="选择图书"
+                  rules={[{ required: true, message: '请选择要归还的图书' }]}
+                  style={{ width: 350 }}
+                >
+                  <Select placeholder="请选择要归还的图书">
+                    {borrowRecords
+                      .filter(r => !r.return_date)
+                      .map(record => (
+                        <Option key={record.book_id} value={record.book_id}>
+                          {record.title} (ISBN: {record.isbn})
+                        </Option>
+                      ))}
+                  </Select>
+                </Form.Item>
+                <Form.Item style={{ marginTop: 24 }}>
+                  <Button type="primary" htmlType="submit" loading={loading}>
+                    还书
+                  </Button>
+                </Form.Item>
+              </Space>
             </Form>
           </Card>
         </TabPane>
