@@ -1,4 +1,3 @@
-
 package repository
 
 import (
@@ -54,4 +53,12 @@ func (r *ConfigRepository) List() ([]model.SystemConfig, error) {
 	var configs []model.SystemConfig
 	err := r.db.Find(&configs).Error
 	return configs, err
+}
+
+func (r *ConfigRepository) Update(config *model.SystemConfig) error {
+	return r.db.Save(config).Error
+}
+
+func (r *ConfigRepository) Create(config *model.SystemConfig) error {
+	return r.db.Create(config).Error
 }

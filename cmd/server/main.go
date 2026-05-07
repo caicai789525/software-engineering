@@ -37,6 +37,8 @@ func main() {
 	bookController := controller.NewBookController()
 	readerController := controller.NewReaderController()
 	borrowController := controller.NewBorrowController()
+	configController := controller.NewConfigController()
+	configController.InitializeConfigs()
 
 	//api路由
 	api := r.Group("/api")
@@ -74,6 +76,12 @@ func main() {
 			statistics.GET("/category", borrowController.GetCategoryStats)
 			statistics.GET("/overdue", borrowController.GetOverdueStats)
 			statistics.GET("/monthly", borrowController.GetMonthlyStats)
+		}
+
+		config := api.Group("/config")
+		{
+			config.GET("", configController.GetAllConfigs)
+			config.PUT("/:key", configController.UpdateConfig)
 		}
 	}
 
