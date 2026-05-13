@@ -5,11 +5,13 @@ import { AuthProvider } from './contexts/AuthContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import Layout from './components/Layout'
 import Login from './pages/Login'
+import Register from './pages/Register'
 import Books from './pages/Books'
 import BorrowReturn from './pages/BorrowReturn'
 import Readers from './pages/Readers'
 import Statistics from './pages/Statistics'
 import SystemConfig from './pages/SystemConfig'
+import Profile from './pages/Profile'
 
 export default function App() {
   return (
@@ -18,6 +20,7 @@ export default function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
             <Route path="/" element={
               <ProtectedRoute>
                 <Layout />
@@ -47,6 +50,11 @@ export default function App() {
               <Route path="system-config" element={
                 <ProtectedRoute allowedRoles={['ROLE_ADMIN']}>
                   <SystemConfig />
+                </ProtectedRoute>
+              } />
+              <Route path="profile" element={
+                <ProtectedRoute allowedRoles={['ROLE_READER', 'ROLE_LIBRARIAN', 'ROLE_ADMIN']}>
+                  <Profile />
                 </ProtectedRoute>
               } />
             </Route>

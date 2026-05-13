@@ -1,14 +1,14 @@
 import React, { useState } from 'react'
-import { Layout as AntLayout, Menu, Button, Dropdown } from 'antd'
-import { 
-  BookOutlined, 
-  FileTextOutlined, 
-  UserOutlined, 
-  BarChartOutlined, 
+import { Layout as AntLayout, Menu, Button, Modal } from 'antd'
+import {
+  BookOutlined,
+  FileTextOutlined,
+  UserOutlined,
+  BarChartOutlined,
   SettingOutlined,
-  LogoutOutlined,
   MenuFoldOutlined,
-  MenuUnfoldOutlined
+  MenuUnfoldOutlined,
+  IdcardOutlined
 } from '@ant-design/icons'
 import { Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
@@ -21,7 +21,8 @@ const menuItems: { key: string; label: string; icon: React.ReactNode; roles: Use
   { key: '/borrow-return', label: '借阅归还', icon: <FileTextOutlined />, roles: ['ROLE_LIBRARIAN', 'ROLE_ADMIN'] },
   { key: '/readers', label: '读者管理', icon: <UserOutlined />, roles: ['ROLE_LIBRARIAN', 'ROLE_ADMIN'] },
   { key: '/statistics', label: '统计分析', icon: <BarChartOutlined />, roles: ['ROLE_LIBRARIAN', 'ROLE_ADMIN'] },
-  { key: '/system-config', label: '系统配置', icon: <SettingOutlined />, roles: ['ROLE_ADMIN'] }
+  { key: '/system-config', label: '系统配置', icon: <SettingOutlined />, roles: ['ROLE_ADMIN'] },
+  { key: '/profile', label: '个人中心', icon: <IdcardOutlined />, roles: ['ROLE_READER'] }
 ]
 
 export default function Layout() {
@@ -29,7 +30,7 @@ export default function Layout() {
   const { role, username, logout } = useAuth()
   const navigate = useNavigate()
 
-  const filteredMenuItems = menuItems.filter(item => 
+  const filteredMenuItems = menuItems.filter(item =>
     !item.roles.length || item.roles.includes(role!)
   )
 
@@ -38,15 +39,17 @@ export default function Layout() {
   }
 
   const handleLogout = () => {
-    logout()
-    navigate('/login')
+    Modal.confirm({
+      title: '确认退出',
+      content: '确定要退出登录吗？',
+      okText: '确认',
+      cancelText: '取消',
+      onOk: () => {
+        logout()
+        navigate('/login')
+      }
+    })
   }
-
-  const logoutMenu = (
-    <Menu items={[
-      { key: 'logout', label: '退出登录', icon: <LogoutOutlined onClick={handleLogout} /> }
-    ]} onClick={handleLogout} />
-  )
 
   return (
     <AntLayout style={{ minHeight: '100vh' }}>
@@ -94,11 +97,9 @@ export default function Layout() {
             }}
           />
           <div style={{ display: 'flex', alignItems: 'center', marginRight: 24 }}>
-            <Dropdown overlay={logoutMenu} placement="bottomRight">
-              <Button type="text" style={{ padding: '0 16px' }}>
-                {username}
-              </Button>
-            </Dropdown>
+            <Button type="text" style={{ padding: '0 16px' }} onClick={handleLogout}>
+              {username}
+            </Button>
           </div>
         </Header>
         <Content

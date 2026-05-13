@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback } from 'react'
 import { Table, Input, Select, Space, Tag, message, Button, Modal, Form } from 'antd'
-import { SearchOutlined, PlusOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons'
+import { SearchOutlined, BookOutlined, EditOutlined, DeleteOutlined, PlusOutlined } from '@ant-design/icons'
 import { Book } from '../types'
-import { bookAPI } from '../services/api'
+import { bookAPI, borrowAPI } from '../services/api'
+import { useAuth } from '../contexts/AuthContext'
 import type { ColumnsType } from 'antd/es/table'
 
 const { Option } = Select
+const { TextArea } = Input
 
 const statusColorMap: Record<string, string> = {
   '在馆': 'green',
@@ -17,6 +19,7 @@ const statusColorMap: Record<string, string> = {
 const categories = ['计算机', '文学', '科幻', '历史', '哲学']
 
 export default function Books() {
+  const { role } = useAuth()
   const [loading, setLoading] = useState(false)
   const [books, setBooks] = useState<Book[]>([])
   const [total, setTotal] = useState(0)
@@ -26,10 +29,13 @@ export default function Books() {
   const [category, setCategory] = useState<string>()
   const [status, setStatus] = useState<string>()
   const [debounceTimer, setDebounceTimer] = useState<NodeJS.Timeout>()
-  
-  const [isModalVisible, setIsModalVisible] = useState(false)
+  const [editModalVisible, setEditModalVisible] = useState(false)
+  const [addModalVisible, setAddModalVisible] = useState(false)
   const [editingBook, setEditingBook] = useState<Book | null>(null)
   const [form] = Form.useForm()
+  const [addForm] = Form.useForm()
+
+  const isReader = role === 'ROLE_READER'
 
   const fetchBooks = useCallback(async () => {
     setLoading(true)
@@ -63,42 +69,41 @@ export default function Books() {
     setDebounceTimer(timer)
   }
 
-  const showAddModal = () => {
-    setEditingBook(null)
-    form.resetFields()
-    setIsModalVisible(true)
+  const handleBorrow = async (book: Book) => {
+    if (!book.book_id || book.status !== '在馆') return
+
+    try {
+      setLoading(true)
+      await borrowAPI.borrowBook({
+        reader_id: '20260001',
+        book_id: book.book_id
+      })
+      message.success('借阅成功')
+      fetchBooks()
+    } catch (error) {
+      message.error('借阅失败')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  const showEditModal = (book: Book) => {
+  const handleEdit = (book: Book) => {
     setEditingBook(book)
-    form.setFieldsValue({
-      isbn: book.isbn,
-      title: book.title,
-      author: book.author,
-      publisher: book.publisher,
-      category: book.category,
-      location: book.location
-    })
-    setIsModalVisible(true)
+    form.setFieldsValue(book)
+    setEditModalVisible(true)
   }
 
-  const handleOk = async () => {
+  const handleUpdate = async () => {
+    if (!editingBook?.book_id) return
     try {
       const values = await form.validateFields()
       setLoading(true)
-      
-      if (editingBook && editingBook.book_id) {
-        await bookAPI.updateBook(editingBook.book_id, values)
-        message.success('图书信息更新成功')
-      } else {
-        await bookAPI.createBook(values)
-        message.success('图书添加成功')
-      }
-      
-      setIsModalVisible(false)
+      await bookAPI.updateBook(editingBook.book_id, values)
+      message.success('更新成功')
+      setEditModalVisible(false)
       fetchBooks()
     } catch (error) {
-      message.error(editingBook ? '更新图书失败' : '添加图书失败')
+      message.error('更新失败')
     } finally {
       setLoading(false)
     }
@@ -106,41 +111,57 @@ export default function Books() {
 
   const handleDelete = async (book: Book) => {
     if (!book.book_id) return
-    
-    try {
-      setLoading(true)
-      await bookAPI.deleteBook(book.book_id)
-      message.success('图书删除成功')
-      fetchBooks()
-    } catch (error) {
-      message.error('删除图书失败')
-    } finally {
-      setLoading(false)
-    }
+    Modal.confirm({
+      title: '确认删除',
+      content: `确定要删除图书《${book.title}》吗？`,
+      okText: '确认',
+      cancelText: '取消',
+      onOk: async () => {
+        try {
+          setLoading(true)
+          await bookAPI.deleteBook(book.book_id)
+          message.success('删除成功')
+          fetchBooks()
+        } catch (error) {
+          message.error('删除失败')
+        } finally {
+          setLoading(false)
+        }
+      }
+    })
   }
 
-  const handleStatusChange = async (book: Book, newStatus: string) => {
+  const handleUpdateStatus = async (book: Book, newStatus: string) => {
     if (!book.book_id) return
-    
     try {
       setLoading(true)
       await bookAPI.updateBookStatus(book.book_id, newStatus)
       message.success('状态更新成功')
       fetchBooks()
     } catch (error) {
-      message.error('更新状态失败')
+      message.error('状态更新失败')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleAdd = async () => {
+    try {
+      const values = await addForm.validateFields()
+      setLoading(true)
+      await bookAPI.createBook(values)
+      message.success('添加成功')
+      setAddModalVisible(false)
+      addForm.resetFields()
+      fetchBooks()
+    } catch (error) {
+      message.error('添加失败')
     } finally {
       setLoading(false)
     }
   }
 
   const columns: ColumnsType<Book> = [
-    {
-      title: '图书ID',
-      dataIndex: 'book_id',
-      key: 'book_id',
-      width: 80
-    },
     {
       title: 'ISBN',
       dataIndex: 'isbn',
@@ -178,19 +199,24 @@ export default function Books() {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
-      width: 120,
+      width: 100,
       render: (status: string, record: Book) => (
-        <Select
-          value={status}
-          onChange={(value) => handleStatusChange(record, value)}
-          style={{ width: 80 }}
-          size="small"
-        >
-          <Option value="在馆">在馆</Option>
-          <Option value="借出">借出</Option>
-          <Option value="修复">修复</Option>
-          <Option value="遗失">遗失</Option>
-        </Select>
+        <Space>
+          <Tag color={statusColorMap[status] || 'default'}>{status}</Tag>
+          {!isReader && (
+            <Select
+              value={status}
+              size="small"
+              style={{ width: 80 }}
+              onChange={(value) => handleUpdateStatus(record, value)}
+            >
+              <Option value="在馆">在馆</Option>
+              <Option value="借出">借出</Option>
+              <Option value="修复">修复</Option>
+              <Option value="遗失">遗失</Option>
+            </Select>
+          )}
+        </Space>
       )
     },
     {
@@ -209,27 +235,38 @@ export default function Books() {
     {
       title: '操作',
       key: 'action',
-      width: 120,
+      width: 150,
       render: (_, record: Book) => (
-        <Space size="middle">
+        isReader ? (
           <Button
-            type="link"
-            icon={<EditOutlined />}
-            onClick={() => showEditModal(record)}
+            type="primary"
+            icon={<BookOutlined />}
+            onClick={() => handleBorrow(record)}
             size="small"
+            disabled={record.status !== '在馆'}
           >
-            修改
+            借阅
           </Button>
-          <Button
-            type="link"
-            danger
-            icon={<DeleteOutlined />}
-            onClick={() => handleDelete(record)}
-            size="small"
-          >
-            删除
-          </Button>
-        </Space>
+        ) : (
+          <Space>
+            <Button
+              type="primary"
+              icon={<EditOutlined />}
+              onClick={() => handleEdit(record)}
+              size="small"
+            >
+              修改
+            </Button>
+            <Button
+              danger
+              icon={<DeleteOutlined />}
+              onClick={() => handleDelete(record)}
+              size="small"
+            >
+              删除
+            </Button>
+          </Space>
+        )
       )
     }
   ]
@@ -237,12 +274,14 @@ export default function Books() {
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <h2>图书管理</h2>
-        <Button type="primary" icon={<PlusOutlined />} onClick={showAddModal}>
-          添加图书
-        </Button>
+        <h2>图书查询</h2>
+        {!isReader && (
+          <Button type="primary" icon={<PlusOutlined />} onClick={() => setAddModalVisible(true)}>
+            添加图书
+          </Button>
+        )}
       </div>
-      
+
       <Space style={{ marginBottom: 16 }} wrap>
         <Input
           placeholder="搜索书名、作者或ISBN"
@@ -303,55 +342,72 @@ export default function Books() {
       />
 
       <Modal
-        title={editingBook ? '修改图书' : '添加图书'}
-        visible={isModalVisible}
-        onOk={handleOk}
-        onCancel={() => setIsModalVisible(false)}
-        confirmLoading={loading}
+        title="编辑图书"
+        open={editModalVisible}
+        onOk={handleUpdate}
+        onCancel={() => setEditModalVisible(false)}
+        okText="确认"
+        cancelText="取消"
       >
         <Form form={form} layout="vertical">
-          <Form.Item
-            label="ISBN"
-            name="isbn"
-            rules={[{ required: true, message: '请输入ISBN' }]}
-          >
-            <Input placeholder="请输入ISBN" disabled={!!editingBook} />
+          <Form.Item name="isbn" label="ISBN" rules={[{ required: true }]}>
+            <Input />
           </Form.Item>
-          <Form.Item
-            label="书名"
-            name="title"
-            rules={[{ required: true, message: '请输入书名' }]}
-          >
-            <Input placeholder="请输入书名" />
+          <Form.Item name="title" label="书名" rules={[{ required: true }]}>
+            <Input />
           </Form.Item>
-          <Form.Item
-            label="作者"
-            name="author"
-            rules={[{ required: true, message: '请输入作者' }]}
-          >
-            <Input placeholder="请输入作者" />
+          <Form.Item name="author" label="作者" rules={[{ required: true }]}>
+            <Input />
           </Form.Item>
-          <Form.Item
-            label="出版社"
-            name="publisher"
-          >
-            <Input placeholder="请输入出版社" />
+          <Form.Item name="publisher" label="出版社" rules={[{ required: true }]}>
+            <Input />
           </Form.Item>
-          <Form.Item
-            label="分类"
-            name="category"
-          >
-            <Select placeholder="请选择分类">
+          <Form.Item name="category" label="分类" rules={[{ required: true }]}>
+            <Select>
               {categories.map(cat => (
                 <Option key={cat} value={cat}>{cat}</Option>
               ))}
             </Select>
           </Form.Item>
-          <Form.Item
-            label="书架位置"
-            name="location"
-          >
-            <Input placeholder="请输入书架位置" />
+          <Form.Item name="location" label="书架位置" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+        </Form>
+      </Modal>
+
+      <Modal
+        title="添加图书"
+        open={addModalVisible}
+        onOk={handleAdd}
+        onCancel={() => {
+          setAddModalVisible(false)
+          addForm.resetFields()
+        }}
+        okText="确认"
+        cancelText="取消"
+      >
+        <Form form={addForm} layout="vertical">
+          <Form.Item name="isbn" label="ISBN" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="title" label="书名" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="author" label="作者" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="publisher" label="出版社" rules={[{ required: true }]}>
+            <Input />
+          </Form.Item>
+          <Form.Item name="category" label="分类" rules={[{ required: true }]}>
+            <Select>
+              {categories.map(cat => (
+                <Option key={cat} value={cat}>{cat}</Option>
+              ))}
+            </Select>
+          </Form.Item>
+          <Form.Item name="location" label="书架位置" rules={[{ required: true }]}>
+            <Input />
           </Form.Item>
         </Form>
       </Modal>
