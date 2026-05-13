@@ -12,8 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// main 函数
-// 初始化配置、数据库、路由、启动服务器
 func main() {
 	if err := config.LoadConfig("config/config.yaml"); err != nil {
 		log.Fatalf("Failed to load config: %v", err)
@@ -40,7 +38,6 @@ func main() {
 	configController := controller.NewConfigController()
 	configController.InitializeConfigs()
 
-	//api路由
 	api := r.Group("/api")
 	{
 		books := api.Group("/books")
@@ -68,6 +65,7 @@ func main() {
 			borrow.POST("", borrowController.BorrowBook)
 			borrow.POST("/return", borrowController.ReturnBook)
 			borrow.GET("/reader/:reader_id", borrowController.GetReaderActiveBorrows)
+			borrow.GET("/reader/:reader_id/history", borrowController.GetReaderHistoryBorrows)
 		}
 
 		statistics := api.Group("/statistics")

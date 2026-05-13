@@ -65,6 +65,14 @@ func (r *BorrowRepository) ListActiveByReader(readerID string) ([]model.BorrowRe
 	return records, err
 }
 
+func (r *BorrowRepository) ListHistoryByReader(readerID string) ([]model.BorrowRecord, error) {
+	var records []model.BorrowRecord
+	err := r.db.Where("reader_id = ? AND return_date IS NOT NULL", readerID).
+		Order("return_date DESC").
+		Find(&records).Error
+	return records, err
+}
+
 type BorrowRankResult struct {
 	ISBN   string `json:"isbn"`
 	Title  string `json:"title"`

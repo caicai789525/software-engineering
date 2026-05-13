@@ -1,4 +1,3 @@
-
 package controller
 
 import (
@@ -74,6 +73,18 @@ func (c *BorrowController) GetReaderActiveBorrows(ctx *gin.Context) {
 	readerID := ctx.Param("reader_id")
 
 	records, err := c.borrowService.GetReaderActiveBorrows(readerID)
+	if err != nil {
+		response.Error(ctx, response.CodeError, err.Error())
+		return
+	}
+
+	response.Success(ctx, records)
+}
+
+func (c *BorrowController) GetReaderHistoryBorrows(ctx *gin.Context) {
+	readerID := ctx.Param("reader_id")
+
+	records, err := c.borrowService.GetReaderHistoryBorrows(readerID)
 	if err != nil {
 		response.Error(ctx, response.CodeError, err.Error())
 		return
