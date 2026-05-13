@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Form, Input, Button, Card, message } from 'antd'
 import { UserOutlined, LockOutlined } from '@ant-design/icons'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { mockAPI } from '../services/mock'
 import { UserRole } from '../types'
@@ -64,15 +64,19 @@ export default function Login() {
           </Form.Item>
 
           <Form.Item>
-            <Button 
-              type="primary" 
-              htmlType="submit" 
+            <Button
+              type="primary"
+              htmlType="submit"
               loading={loading}
               style={{ width: '100%' }}
             >
               登录
             </Button>
           </Form.Item>
+
+          <div style={{ textAlign: 'center', marginTop: '16px' }}>
+            没有账号？<Link to="/register">立即注册</Link>
+          </div>
         </Form>
         <div style={{ color: '#999', fontSize: '12px', marginTop: '16px' }}>
           <p>测试账号：</p>

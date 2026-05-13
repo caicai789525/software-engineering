@@ -43,17 +43,17 @@ export const readerAPI = {
 }
 
 export const borrowAPI = {
-  borrow: (readerId: string, bookId: number) =>
-    request.post<any, { title: string; due_date: string }>('/borrow', {
-      reader_id: readerId,
-      book_id: bookId
-    }),
+  borrowBook: (data: { reader_id: string; book_id: number }) =>
+    request.post<any, { title: string; due_date: string }>('/borrow', data),
   
-  returnBook: (bookId: number) =>
-    request.post<any, { fine: number }>('/borrow/return', { book_id: bookId }),
+  returnBook: (data: { book_id: number }) =>
+    request.post<any, { fine: number }>('/borrow/return', data),
   
-  getReaderBorrows: (readerId: string) =>
-    request.get<any, BorrowRecord[]>(`/borrow/reader/${readerId}`)
+  getActiveBorrows: (readerId: string) =>
+    request.get<any, BorrowRecord[]>(`/borrow/reader/${readerId}`),
+  
+  getHistoryBorrows: (readerId: string) =>
+    request.get<any, BorrowRecord[]>(`/borrow/reader/${readerId}/history`)
 }
 
 export const statisticsAPI = {
