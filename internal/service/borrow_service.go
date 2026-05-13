@@ -184,6 +184,10 @@ func (s *BorrowService) GetReaderActiveBorrows(readerID string) ([]model.BorrowR
 	return s.borrowRepo.ListActiveByReader(readerID)
 }
 
+func (s *BorrowService) GetReaderHistoryBorrows(readerID string) ([]model.BorrowRecord, error) {
+	return s.borrowRepo.ListHistoryByReader(readerID)
+}
+
 func (s *BorrowService) GetBorrowRank(startDate, endDate string, limit int) ([]repository.BorrowRankResult, error) {
 	var start, end time.Time
 	if startDate != "" {
