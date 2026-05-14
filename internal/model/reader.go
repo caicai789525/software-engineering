@@ -1,4 +1,3 @@
-
 package model
 
 import "time"
@@ -13,6 +12,7 @@ type Reader struct {
 	Name     string    `gorm:"column:name;not null" json:"name"`
 	Phone    string    `gorm:"column:phone;not null" json:"phone"`
 	Email    string    `gorm:"column:email" json:"email"`
+	Password string    `gorm:"column:password;not null" json:"-"`
 	RegDate  time.Time `gorm:"column:reg_date;type:date;not null" json:"reg_date"`
 	Status   string    `gorm:"column:status;not null;default:'正常'" json:"status"`
 }

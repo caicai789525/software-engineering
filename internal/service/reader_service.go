@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"library-management-system/internal/model"
 	"library-management-system/internal/repository"
+	securityService "library-management-system/security/service"
 	"regexp"
 	"strconv"
 	"time"
@@ -23,9 +24,10 @@ func NewReaderService() *ReaderService {
 }
 
 type CreateReaderRequest struct {
-	Name  string `json:"name" binding:"required"`
-	Phone string `json:"phone" binding:"required"`
-	Email string `json:"email"`
+	Name     string `json:"name" binding:"required"`
+	Phone    string `json:"phone" binding:"required"`
+	Email    string `json:"email"`
+	Password string `json:"password" binding:"required,min=6"`
 }
 
 type UpdateReaderRequest struct {
@@ -81,6 +83,11 @@ func (s *ReaderService) CreateReader(req *CreateReaderRequest) (*model.Reader, e
 		return nil, errors.New("邮箱格式不正确")
 	}
 
+	hashedPassword, err := securityService.HashPassword(req.Password)
+	if err != nil {
+		return nil, errors.New("密码加密失败")
+	}
+
 	readerID := s.generateReaderID()
 
 	reader := &model.Reader{
@@ -88,11 +95,12 @@ func (s *ReaderService) CreateReader(req *CreateReaderRequest) (*model.Reader, e
 		Name:     req.Name,
 		Phone:    req.Phone,
 		Email:    req.Email,
+		Password: hashedPassword,
 		RegDate:  time.Now(),
 		Status:   model.ReaderStatusNormal,
 	}
 
-	err := s.readerRepo.Create(reader)
+	err = s.readerRepo.Create(reader)
 	if err != nil {
 		return nil, err
 	}

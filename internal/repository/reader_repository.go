@@ -74,3 +74,12 @@ func (r *ReaderRepository) Exists(readerID string) (bool, error) {
 	err := r.db.Model(&model.Reader{}).Where("reader_id = ?", readerID).Count(&count).Error
 	return count > 0, err
 }
+
+func (r *ReaderRepository) FindByName(name string) (*model.Reader, error) {
+	var reader model.Reader
+	err := r.db.Where("name = ?", name).First(&reader).Error
+	if err != nil {
+		return nil, err
+	}
+	return &reader, nil
+}
