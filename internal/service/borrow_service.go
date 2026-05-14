@@ -180,11 +180,11 @@ func (s *BorrowService) ReturnBook(req *ReturnRequest) (*model.BorrowRecord, err
 	return record, nil
 }
 
-func (s *BorrowService) GetReaderActiveBorrows(readerID string) ([]model.BorrowRecord, error) {
+func (s *BorrowService) GetReaderActiveBorrows(readerID string) ([]model.BorrowRecordWithBook, error) {
 	return s.borrowRepo.ListActiveByReader(readerID)
 }
 
-func (s *BorrowService) GetReaderHistoryBorrows(readerID string) ([]model.BorrowRecord, error) {
+func (s *BorrowService) GetReaderHistoryBorrows(readerID string) ([]model.BorrowRecordWithBook, error) {
 	return s.borrowRepo.ListHistoryByReader(readerID)
 }
 

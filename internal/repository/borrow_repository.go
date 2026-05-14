@@ -59,16 +59,23 @@ func (r *BorrowRepository) CountActiveByReader(readerID string) (int64, error) {
 	return count, err
 }
 
-func (r *BorrowRepository) ListActiveByReader(readerID string) ([]model.BorrowRecord, error) {
-	var records []model.BorrowRecord
-	err := r.db.Where("reader_id = ? AND return_date IS NULL", readerID).Find(&records).Error
+func (r *BorrowRepository) ListActiveByReader(readerID string) ([]model.BorrowRecordWithBook, error) {
+	var records []model.BorrowRecordWithBook
+	err := r.db.Table("borrow_records br").
+		Select("br.borrow_id, br.reader_id, br.book_id, br.isbn, b.title as book_title, br.borrow_date, br.due_date, br.return_date, br.fine").
+		Joins("LEFT JOIN books b ON br.book_id = b.book_id").
+		Where("br.reader_id = ? AND br.return_date IS NULL", readerID).
+		Find(&records).Error
 	return records, err
 }
 
-func (r *BorrowRepository) ListHistoryByReader(readerID string) ([]model.BorrowRecord, error) {
-	var records []model.BorrowRecord
-	err := r.db.Where("reader_id = ? AND return_date IS NOT NULL", readerID).
-		Order("return_date DESC").
+func (r *BorrowRepository) ListHistoryByReader(readerID string) ([]model.BorrowRecordWithBook, error) {
+	var records []model.BorrowRecordWithBook
+	err := r.db.Table("borrow_records br").
+		Select("br.borrow_id, br.reader_id, br.book_id, br.isbn, b.title as book_title, br.borrow_date, br.due_date, br.return_date, br.fine").
+		Joins("LEFT JOIN books b ON br.book_id = b.book_id").
+		Where("br.reader_id = ? AND br.return_date IS NOT NULL", readerID).
+		Order("br.return_date DESC").
 		Find(&records).Error
 	return records, err
 }
