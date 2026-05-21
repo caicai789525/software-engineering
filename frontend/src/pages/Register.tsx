@@ -11,12 +11,13 @@ export default function Register() {
   const onFinish = async (values: { name: string; phone: string; email: string; password: string }) => {
     setLoading(true)
     try {
-      await readerAPI.createReader({
+      const result = await readerAPI.createReader({
         name: values.name,
         phone: values.phone,
-        email: values.email
+        email: values.email,
+        password: values.password
       })
-      message.success('注册成功！请使用您的读者证号登录')
+      message.success('注册成功！请登录')
       navigate('/login')
     } catch (error: any) {
       message.error(error?.response?.data?.msg || error?.message || '注册失败')

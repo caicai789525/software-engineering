@@ -30,7 +30,7 @@ export const readerAPI = {
   
   getReader: (readerId: string) => request.get<any, Reader>(`/readers/${readerId}`),
   
-  createReader: (data: { name: string; phone: string; email: string }) =>
+  createReader: (data: { name: string; phone: string; email: string; password: string }) =>
     request.post('/readers', data),
   
   updateReader: (readerId: string, data: Partial<Reader>) =>

@@ -19,7 +19,7 @@ const statusColorMap: Record<string, string> = {
 const categories = ['计算机', '文学', '科幻', '历史', '哲学']
 
 export default function Books() {
-  const { role } = useAuth()
+  const { role, username } = useAuth()
   const [loading, setLoading] = useState(false)
   const [books, setBooks] = useState<Book[]>([])
   const [total, setTotal] = useState(0)
@@ -75,7 +75,7 @@ export default function Books() {
     try {
       setLoading(true)
       await borrowAPI.borrowBook({
-        reader_id: '20260001',
+        reader_id: username || '',
         book_id: book.book_id
       })
       message.success('借阅成功')
