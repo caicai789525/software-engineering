@@ -3,7 +3,7 @@ import { Form, Input, Button, Card, message } from 'antd'
 import { UserOutlined, LockOutlined } from '@ant-design/icons'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { mockAPI } from '../services/mock'
+import { authAPI } from '../services/api'
 import { UserRole } from '../types'
 
 export default function Login() {
@@ -14,7 +14,7 @@ export default function Login() {
   const onFinish = async (values: { username: string; password: string }) => {
     setLoading(true)
     try {
-      const result = await mockAPI.login(values.username, values.password)
+      const result = await authAPI.login(values.username, values.password)
       login(result.token, result.role as UserRole, result.username)
       message.success('登录成功')
       navigate('/')
@@ -26,15 +26,15 @@ export default function Login() {
   }
 
   return (
-    <div style={{ 
-      display: 'flex', 
-      justifyContent: 'center', 
-      alignItems: 'center', 
+    <div style={{
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
       minHeight: '100vh',
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
     }}>
-      <Card 
-        title="图书管理系统 - 登录" 
+      <Card
+        title="图书管理系统 - 登录"
         style={{ width: 400, boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
       >
         <Form
@@ -47,9 +47,9 @@ export default function Login() {
             name="username"
             rules={[{ required: true, message: '请输入用户名' }]}
           >
-            <Input 
-              prefix={<UserOutlined />} 
-              placeholder="用户名 (reader/librarian/admin)" 
+            <Input
+              prefix={<UserOutlined />}
+              placeholder="用户名 / 读者证号"
             />
           </Form.Item>
 
@@ -59,7 +59,7 @@ export default function Login() {
           >
             <Input.Password
               prefix={<LockOutlined />}
-              placeholder="密码 (123456)"
+              placeholder="密码"
             />
           </Form.Item>
 
@@ -79,10 +79,8 @@ export default function Login() {
           </div>
         </Form>
         <div style={{ color: '#999', fontSize: '12px', marginTop: '16px' }}>
-          <p>测试账号：</p>
-          <p>• reader / 123456 (读者)</p>
-          <p>• librarian / 123456 (图书管理员)</p>
-          <p>• admin / 123456 (系统管理员)</p>
+          <p>管理员账号：</p>
+          <p>• admin / 123456</p>
         </div>
       </Card>
     </div>

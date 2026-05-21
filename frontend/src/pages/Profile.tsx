@@ -3,6 +3,7 @@ import { Table, Tag, Card, Statistic, Row, Col, message, Button } from 'antd'
 import { BookOutlined, ClockCircleOutlined, ExclamationCircleOutlined, HistoryOutlined, RotateLeftOutlined } from '@ant-design/icons'
 import { Reader, BorrowRecord } from '../types'
 import { readerAPI, borrowAPI } from '../services/api'
+import { useAuth } from '../contexts/AuthContext'
 import type { ColumnsType } from 'antd/es/table'
 
 const statusColorMap: Record<string, string> = {
@@ -13,6 +14,8 @@ const statusColorMap: Record<string, string> = {
 }
 
 export default function Profile() {
+  const { username } = useAuth()
+  const readerId = username || ''
   const [loading, setLoading] = useState(false)
   const [reader, setReader] = useState<Reader | null>(null)
   const [activeBorrows, setActiveBorrows] = useState<BorrowRecord[]>([])
@@ -25,7 +28,7 @@ export default function Profile() {
   const fetchReaderInfo = useCallback(async () => {
     setLoading(true)
     try {
-      const result = await readerAPI.getReader('20260001')
+      const result = await readerAPI.getReader(readerId)
       setReader(result)
     } catch (error) {
       message.error('获取读者信息失败')
@@ -37,7 +40,7 @@ export default function Profile() {
   const fetchActiveBorrows = useCallback(async () => {
     setLoading(true)
     try {
-      const result = await borrowAPI.getActiveBorrows('20260001')
+      const result = await borrowAPI.getActiveBorrows(readerId)
       setActiveBorrows(result)
       setActiveCount(result.length)
       
@@ -56,7 +59,7 @@ export default function Profile() {
   const fetchHistoryBorrows = useCallback(async () => {
     setLoading(true)
     try {
-      const result = await borrowAPI.getHistoryBorrows('20260001')
+      const result = await borrowAPI.getHistoryBorrows(readerId)
       setHistoryBorrows(result)
       setTotalBorrowed(result.length)
       
