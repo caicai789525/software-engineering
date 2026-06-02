@@ -11,8 +11,6 @@ import (
 	"gorm.io/gorm"
 )
 
-const DateFormat = "2006-01-02"
-
 type BorrowService struct {
 	borrowRepo *repository.BorrowRepository
 	bookRepo   *repository.BookRepository
@@ -193,10 +191,10 @@ func (s *BorrowService) GetReaderHistoryBorrows(readerID string) ([]model.Borrow
 func (s *BorrowService) GetBorrowRank(startDate, endDate string, limit int) ([]repository.BorrowRankResult, error) {
 	var start, end time.Time
 	if startDate != "" {
-		start, _ = time.Parse(DateFormat, startDate)
+		start, _ = time.Parse("2006-01-02", startDate)
 	}
 	if endDate != "" {
-		end, _ = time.Parse(DateFormat, endDate)
+		end, _ = time.Parse("2006-01-02", endDate)
 	}
 	if limit <= 0 {
 		limit = 10
@@ -207,10 +205,10 @@ func (s *BorrowService) GetBorrowRank(startDate, endDate string, limit int) ([]r
 func (s *BorrowService) GetCategoryStats(startDate, endDate string) ([]repository.CategoryStatsResult, error) {
 	var start, end time.Time
 	if startDate != "" {
-		start, _ = time.Parse(DateFormat, startDate)
+		start, _ = time.Parse("2006-01-02", startDate)
 	}
 	if endDate != "" {
-		end, _ = time.Parse(DateFormat, endDate)
+		end, _ = time.Parse("2006-01-02", endDate)
 	}
 	return s.borrowRepo.GetCategoryStats(start, end)
 }
@@ -218,10 +216,10 @@ func (s *BorrowService) GetCategoryStats(startDate, endDate string) ([]repositor
 func (s *BorrowService) GetOverdueStats(startDate, endDate string) ([]model.BorrowRecord, error) {
 	var start, end time.Time
 	if startDate != "" {
-		start, _ = time.Parse(DateFormat, startDate)
+		start, _ = time.Parse("2006-01-02", startDate)
 	}
 	if endDate != "" {
-		end, _ = time.Parse(DateFormat, endDate)
+		end, _ = time.Parse("2006-01-02", endDate)
 	}
 	return s.borrowRepo.GetOverdueStats(start, end)
 }

@@ -7,8 +7,6 @@ import (
 	"gorm.io/gorm"
 )
 
-const readerIDCondition = "reader_id = ?"
-
 type ReaderRepository struct {
 	db *gorm.DB
 }
@@ -26,12 +24,12 @@ func (r *ReaderRepository) Update(reader *model.Reader) error {
 }
 
 func (r *ReaderRepository) Delete(readerID string) error {
-	return r.db.Delete(&model.Reader{}, readerIDCondition, readerID).Error
+	return r.db.Delete(&model.Reader{}, "reader_id = ?", readerID).Error
 }
 
 func (r *ReaderRepository) FindByID(readerID string) (*model.Reader, error) {
 	var reader model.Reader
-	err := r.db.Where(readerIDCondition, readerID).First(&reader).Error
+	err := r.db.Where("reader_id = ?", readerID).First(&reader).Error
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +58,7 @@ func (r *ReaderRepository) List(keyword, status string, page, pageSize int) ([]m
 }
 
 func (r *ReaderRepository) UpdateStatus(readerID, status string) error {
-	return r.db.Model(&model.Reader{}).Where(readerIDCondition, readerID).Update("status", status).Error
+	return r.db.Model(&model.Reader{}).Where("reader_id = ?", readerID).Update("status", status).Error
 }
 
 func (r *ReaderRepository) HasActiveBorrow(readerID string) (bool, error) {
@@ -73,7 +71,7 @@ func (r *ReaderRepository) HasActiveBorrow(readerID string) (bool, error) {
 
 func (r *ReaderRepository) Exists(readerID string) (bool, error) {
 	var count int64
-	err := r.db.Model(&model.Reader{}).Where(readerIDCondition, readerID).Count(&count).Error
+	err := r.db.Model(&model.Reader{}).Where("reader_id = ?", readerID).Count(&count).Error
 	return count > 0, err
 }
 
