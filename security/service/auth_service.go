@@ -2,20 +2,23 @@ package service
 
 import (
 	"errors"
+	"library-management-system/internal/model"
+	"library-management-system/internal/repository"
 	"library-management-system/security/jwt"
-	"library-management-system/security/repository"
+	securityRepo "library-management-system/security/repository"
 
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 )
 
 type AuthService struct {
-	adminRepo *repository.AdminRepository
+	adminRepo  *securityRepo.AdminRepository
+	readerRepo *repository.ReaderRepository
 }
 
 func NewAuthService() *AuthService {
 	return &AuthService{
-		adminRepo: repository.NewAdminRepository(),
+		adminRepo:  securityRepo.NewAdminRepository(),
+		readerRepo: repository.NewReaderRepository(),
 	}
 }
 
@@ -25,8 +28,9 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	Token string `json:"token"`
-	Role  string `json:"role"`
+	Token    string `json:"token"`
+	Role     string `json:"role"`
+	Username string `json:"username"`
 }
 
 type CurrentUserResponse struct {
@@ -41,31 +45,54 @@ type ChangePasswordRequest struct {
 
 func (s *AuthService) Login(req *LoginRequest, ip string) (*LoginResponse, error) {
 	admin, err := s.adminRepo.FindByUsername(req.Username)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
+	if err == nil {
+		err = bcrypt.CompareHashAndPassword([]byte(admin.Password), []byte(req.Password))
+		if err != nil {
 			return nil, errors.New("用户名或密码错误")
 		}
-		return nil, err
+
+		token, err := jwt.GenerateToken(admin.Username, admin.Role)
+		if err != nil {
+			return nil, err
+		}
+
+		_ = s.adminRepo.UpdateLastLoginIP(admin.AdminID, ip)
+
+		return &LoginResponse{
+			Token:    token,
+			Role:     admin.Role,
+			Username: admin.Username,
+		}, nil
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(admin.Password), []byte(req.Password))
+	var reader *model.Reader
+
+	reader, err = s.readerRepo.FindByID(req.Username)
+	if err != nil {
+		reader, err = s.readerRepo.FindByName(req.Username)
+		if err != nil {
+			return nil, errors.New("用户名或密码错误")
+		}
+	}
+
+	if reader.Status != model.ReaderStatusNormal {
+		return nil, errors.New("账号已被注销")
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(reader.Password), []byte(req.Password))
 	if err != nil {
 		return nil, errors.New("用户名或密码错误")
 	}
 
-	token, err := jwt.GenerateToken(admin.Username, admin.Role)
-	if err != nil {
-		return nil, err
-	}
-
-	err = s.adminRepo.UpdateLastLoginIP(admin.AdminID, ip)
+	token, err := jwt.GenerateToken(reader.ReaderID, "ROLE_READER")
 	if err != nil {
 		return nil, err
 	}
 
 	return &LoginResponse{
-		Token: token,
-		Role:  admin.Role,
+		Token:    token,
+		Role:     "ROLE_READER",
+		Username: reader.ReaderID,
 	}, nil
 }
 

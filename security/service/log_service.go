@@ -6,6 +6,8 @@ import (
 	"time"
 )
 
+const DateFormat = "2006-01-02"
+
 type LogService struct {
 	logRepo *repository.LogRepository
 }
@@ -37,13 +39,13 @@ func (s *LogService) ListLogs(operator, operationType, startTimeStr, endTimeStr 
 	var startTime, endTime *time.Time
 
 	if startTimeStr != "" {
-		if t, err := time.Parse("2006-01-02", startTimeStr); err == nil {
+		if t, err := time.Parse(DateFormat, startTimeStr); err == nil {
 			startTime = &t
 		}
 	}
 
 	if endTimeStr != "" {
-		if t, err := time.Parse("2006-01-02", endTimeStr); err == nil {
+		if t, err := time.Parse(DateFormat, endTimeStr); err == nil {
 			endTime = &t
 		}
 	}
@@ -55,13 +57,13 @@ func (s *LogService) ExportLogs(operator, operationType, startTimeStr, endTimeSt
 	var startTime, endTime *time.Time
 
 	if startTimeStr != "" {
-		if t, err := time.Parse("2006-01-02", startTimeStr); err == nil {
+		if t, err := time.Parse(DateFormat, startTimeStr); err == nil {
 			startTime = &t
 		}
 	}
 
 	if endTimeStr != "" {
-		if t, err := time.Parse("2006-01-02", endTimeStr); err == nil {
+		if t, err := time.Parse(DateFormat, endTimeStr); err == nil {
 			endTime = &t
 		}
 	}
