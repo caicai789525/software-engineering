@@ -6,7 +6,6 @@ import (
 	"time"
 )
 
-// DateFormat 定义日期格式
 const DateFormat = "2006-01-02"
 
 type LogService struct {
@@ -21,10 +20,10 @@ func NewLogService() *LogService {
 
 func (s *LogService) LogOperation(operator, operationType, targetObject string, params interface{}, ip string) {
 	logEntry := &model.OperationLog{
-		Operator:      operator,
+		Operator:     operator,
 		OperationType: operationType,
-		TargetObject:  targetObject,
-		IPAddress:     ip,
+		TargetObject: targetObject,
+		IPAddress:    ip,
 	}
 
 	if str, ok := params.(string); ok {
