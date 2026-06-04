@@ -6,11 +6,14 @@ import (
 	"library-management-system/database"
 	"library-management-system/internal/controller"
 	"library-management-system/pkg/response"
+	authCtrl "library-management-system/security/controller"
 	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
+
+const readerIDParam = "/:reader_id"
 
 func main() {
 	if err := config.LoadConfig("config/config.yaml"); err != nil {
@@ -36,10 +39,13 @@ func main() {
 	readerController := controller.NewReaderController()
 	borrowController := controller.NewBorrowController()
 	configController := controller.NewConfigController()
+	authController := authCtrl.NewAuthController()
 	configController.InitializeConfigs()
 
 	api := r.Group("/api")
 	{
+		api.POST("/auth/login", authController.Login)
+
 		books := api.Group("/books")
 		{
 			books.GET("", bookController.ListBooks)
@@ -53,19 +59,19 @@ func main() {
 		readers := api.Group("/readers")
 		{
 			readers.GET("", readerController.ListReaders)
-			readers.GET("/:reader_id", readerController.GetReader)
+			readers.GET(readerIDParam, readerController.GetReader)
 			readers.POST("", readerController.CreateReader)
-			readers.PUT("/:reader_id", readerController.UpdateReader)
-			readers.DELETE("/:reader_id", readerController.DeleteReader)
-			readers.PATCH("/:reader_id/status", readerController.UpdateReaderStatus)
+			readers.PUT(readerIDParam, readerController.UpdateReader)
+			readers.DELETE(readerIDParam, readerController.DeleteReader)
+			readers.PATCH(readerIDParam+"/status", readerController.UpdateReaderStatus)
 		}
 
 		borrow := api.Group("/borrow")
 		{
 			borrow.POST("", borrowController.BorrowBook)
 			borrow.POST("/return", borrowController.ReturnBook)
-			borrow.GET("/reader/:reader_id", borrowController.GetReaderActiveBorrows)
-			borrow.GET("/reader/:reader_id/history", borrowController.GetReaderHistoryBorrows)
+			borrow.GET("/reader"+readerIDParam, borrowController.GetReaderActiveBorrows)
+			borrow.GET("/reader"+readerIDParam+"/history", borrowController.GetReaderHistoryBorrows)
 		}
 
 		statistics := api.Group("/statistics")
