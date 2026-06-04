@@ -34,7 +34,7 @@ request.interceptors.response.use(
     if (error.response?.status === 401) {
       localStorage.removeItem('token')
       localStorage.removeItem('role')
-      window.location.href = '/login'
+      globalThis.location.href = '/login'
     }
     message.error(error.message || '网络错误')
     return Promise.reject(error)
